@@ -9,8 +9,11 @@ const releaseType = process.argv[2];
  * @namespace ReleaseInterface
  */
 const ReleaseInterface = {
-  logHeader(text) {
-    console.log(chalk.blue.bold(`\n${text}`));
+  logGroup(text) {
+    console.group(chalk.blue.bold(`\n${text}`));
+  },
+  logGroupEnd() {
+    console.groupEnd(chalk.blue.bold(`----------\n`));
   },
 
   /**
@@ -30,11 +33,12 @@ const ReleaseInterface = {
    */
   execScript(script) {
     try {
-      this.logHeader(`Executing script "${script}"`);
+      this.logGroup(`Executing script "${script}"`);
       execSync(script, { stdio: "inherit" });
     } catch (err) {
       this.stopWithErrorLog(`Executing of script "${script}" failed!`, err);
     }
+    this.logGroupEnd();
   },
 
   /**
@@ -42,7 +46,7 @@ const ReleaseInterface = {
    * @param {string} versionType
    */
   upgradeVersion(versionType) {
-    this.logHeader("Upgrading version...");
+    this.logGroup("Upgrading version...");
 
     if (versionType === "prerelease") {
       // eslint-disable-next-line global-require
@@ -57,6 +61,7 @@ const ReleaseInterface = {
     } else if (versionType === "release") {
       this.execScript("yarn version --minor");
     }
+    this.logGroupEnd();
   },
 
   /**
@@ -126,13 +131,14 @@ const ReleaseInterface = {
       this.stopWithErrorLog("You have some uncommitted changes!");
     }
 
-    this.logHeader("Updating local branches...");
+    this.logGroup("Updating local branches...");
     await this.updateBranch("develop");
 
     if (operation === "release") {
       await this.updateBranch("master");
       await this.rebaseBranches("develop", "master");
     }
+    this.logGroupEnd();
   },
 
   /**
@@ -142,7 +148,7 @@ const ReleaseInterface = {
    * @param {string} operation
    */
   async finishRelease(operation) {
-    this.logHeader("Updating repository after release...");
+    this.logGroup("Updating repository after release...");
 
     try {
       if (operation === "release") {
@@ -162,6 +168,7 @@ const ReleaseInterface = {
     } catch (err) {
       this.stopWithErrorLog("Something went wrong!", err);
     }
+    this.logGroupEnd();
   },
 
   /**
@@ -192,16 +199,19 @@ if (releaseType !== "pre-release" || releaseType !== "release") {
     prompt: "> "
   });
 
-  const releaseLog =
-    releaseType === "release"
-      ? chalk.bgRedBright.white.bold(" " + releaseType.toUpperCase() + " ")
-      : chalk.bgYellowBright.black(" " + releaseType.toUpperCase() + " ");
+  const prettyReleaseType = () => {
+    const text = " " + releaseType.toUpperCase() + " ";
+
+    return releaseType === "release"
+      ? chalk.bgRedBright.white.bold(text)
+      : chalk.bgYellowBright.black(text);
+  };
 
   console.log(
-    `You are trying to run ${releaseLog}, are you sure to continue this process? ${chalk.blue.bold(
-      "[y/n]"
-    )}`
+    `You are trying to run ${prettyReleaseType()},`,
+    `are you sure to continue this process? ${chalk.blue.bold("[y/n]")}`
   );
+
   input.prompt();
 
   input.on("line", answer => {
