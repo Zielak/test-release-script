@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
-const { execSync } = require('child_process');
-const readline = require('readline');
-const chalk = require('chalk');
-const git = require('simple-git/promise')();
+const { execSync } = require("child_process");
+const readline = require("readline");
+const chalk = require("chalk");
+const git = require("simple-git/promise")();
 const releaseType = process.argv[2];
 
 /**
@@ -31,32 +31,31 @@ const ReleaseInterface = {
   execScript(script) {
     try {
       this.logHeader(`Executing script "${script}"`);
-      execSync(script, { stdio: 'inherit' });
+      execSync(script, { stdio: "inherit" });
     } catch (err) {
       this.stopWithErrorLog(`Executing of script "${script}" failed!`, err);
     }
   },
-
 
   /**
    * Upgrades version of repository.
    * @param {string} versionType
    */
   upgradeVersion(versionType) {
-    this.logHeader('Upgrading version...');
+    this.logHeader("Upgrading version...");
 
-    if (versionType === 'prerelease') {
+    if (versionType === "prerelease") {
       // eslint-disable-next-line global-require
-      const { version } = require('../package.json');
+      const { version } = require("../package.json");
       const rcAlreadyExist = /\d-\d/.test(version);
 
       if (rcAlreadyExist) {
-        this.execScript('yarn version --prerelease');
+        this.execScript("yarn version --prerelease");
       } else {
-        this.execScript('yarn version --preminor');
+        this.execScript("yarn version --preminor");
       }
-    } else if (versionType === 'release') {
-      this.execScript('yarn version --minor');
+    } else if (versionType === "release") {
+      this.execScript("yarn version --minor");
     }
   },
 
@@ -70,19 +69,27 @@ const ReleaseInterface = {
       const status = await git.status();
 
       if (status.ahead) {
-        throw new Error(`Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`);
+        throw new Error(
+          `Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`
+        );
       }
 
       if (status.behind) {
         try {
-          await git.pull('origin', branch, { '--rebase': 'true' });
+          await git.pull("origin", branch, { "--rebase": "true" });
         } catch (err) {
-          await git.rebase({ '--abort': null });
-          throw new Error(`Some conflicts were found, while rebasing local/${branch} onto origin/${branch}!`);
+          await git.rebase({ "--abort": null });
+          throw new Error(
+            `Some conflicts were found, while rebasing local/${branch} onto origin/${branch}!`
+          );
         }
       }
 
-      console.log(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`);
+      console.log(
+        `${branch} branch ${
+          status.behind ? "has been updated." : "is up to date"
+        }`
+      );
     } catch (err) {
       this.stopWithErrorLog(`While updating ${branch}!`, err);
     }
@@ -98,8 +105,10 @@ const ReleaseInterface = {
       await git.rebase([rebaseTarget, branchToRebase]);
       console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}`);
     } catch (err) {
-      await git.rebase({ '--abort': null });
-      this.stopWithErrorLog(`Some conflicts were found, while rebasing ${branchToRebase} onto ${rebaseTarget}!`);
+      await git.rebase({ "--abort": null });
+      this.stopWithErrorLog(
+        `Some conflicts were found, while rebasing ${branchToRebase} onto ${rebaseTarget}!`
+      );
     }
   },
 
@@ -114,15 +123,15 @@ const ReleaseInterface = {
     const status = await git.status();
 
     if (status.files.length) {
-      this.stopWithErrorLog('You have some uncommitted changes!');
+      this.stopWithErrorLog("You have some uncommitted changes!");
     }
 
-    this.logHeader('Updating local branches...');
-    await this.updateBranch('develop');
+    this.logHeader("Updating local branches...");
+    await this.updateBranch("develop");
 
-    if (operation === 'release') {
-      await this.updateBranch('master');
-      await this.rebaseBranches('develop', 'master');
+    if (operation === "release") {
+      await this.updateBranch("master");
+      await this.rebaseBranches("develop", "master");
     }
   },
 
@@ -133,25 +142,25 @@ const ReleaseInterface = {
    * @param {string} operation
    */
   async finishRelease(operation) {
-    this.logHeader('Updating repository after release...');
+    this.logHeader("Updating repository after release...");
 
     try {
-      if (operation === 'release') {
-        await git.push('origin', 'master');
-        console.log('Pushed master to origin');
-        await git.pushTags('origin');
-        console.log('Pushed tags to origin');
-        await this.rebaseBranches('master', 'develop');
-        await git.push('origin', 'develop');
-        console.log('Pushed develop to origin');
+      if (operation === "release") {
+        await git.push("origin", "master");
+        console.log("Pushed master to origin");
+        await git.pushTags("origin");
+        console.log("Pushed tags to origin");
+        await this.rebaseBranches("master", "develop");
+        await git.push("origin", "develop");
+        console.log("Pushed develop to origin");
       } else {
-        await git.push('origin', 'develop');
-        console.log('Pushed develop to origin');
-        await git.pushTags('origin');
-        console.log('Pushed tags to origin');
+        await git.push("origin", "develop");
+        console.log("Pushed develop to origin");
+        await git.pushTags("origin");
+        console.log("Pushed tags to origin");
       }
     } catch (err) {
-      this.stopWithErrorLog('Something went wrong!', err);
+      this.stopWithErrorLog("Something went wrong!", err);
     }
   },
 
@@ -162,41 +171,45 @@ const ReleaseInterface = {
   async makeRelease(operation) {
     await this.prepareLocalRepository(operation);
 
-    this.execScript('yarn install');
-    this.execScript('yarn lint');
-    this.execScript('yarn test:unit');
+    this.execScript("yarn install");
+    this.execScript("yarn lint");
+    this.execScript("yarn test:unit");
 
     this.upgradeVersion(operation);
-    this.execScript('yarn deploy');
+    this.execScript("yarn deploy");
 
     await this.finishRelease(operation);
-  },
+  }
 };
 
-if (releaseType !== 'pre-release' || releaseType !== 'release') {
+if (releaseType !== "pre-release" || releaseType !== "release") {
   /**
    * To prevent accidental release, creates question with confirm prompt.
    */
   const input = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: '> ',
+    prompt: "> "
   });
 
-  console.log(`You are trying to run ${releaseType}, are you sure to continue this process? ${chalk.blue.bold('[y/n]')}`);
+  console.log(
+    `You are trying to run ${chalk.bgRedBright.white(
+      releaseType
+    )}, are you sure to continue this process? ${chalk.blue.bold("[y/n]")}`
+  );
   input.prompt();
 
-  input.on('line', (answer) => {
+  input.on("line", answer => {
     switch (answer.trim().toLowerCase()) {
-      case 'y':
+      case "y":
         input.close();
         ReleaseInterface.makeRelease(releaseType);
         break;
-      case 'n':
+      case "n":
         process.exit(0);
         break;
       default:
-        console.log('incorrect answer!');
+        console.log("incorrect answer!");
         input.prompt();
         break;
     }
