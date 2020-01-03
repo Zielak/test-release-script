@@ -192,10 +192,15 @@ if (releaseType !== "pre-release" || releaseType !== "release") {
     prompt: "> "
   });
 
+  const releaseLog =
+    releaseType === "release"
+      ? chalk.bgRedBright.white.bold(" " + releaseType.toUpperCase() + " ")
+      : chalk.bgYellowBright.black(" " + releaseType.toUpperCase() + " ");
+
   console.log(
-    `You are trying to run ${chalk.bgRedBright.white(
-      " " + releaseType.toUpperCase() + " "
-    )}, are you sure to continue this process? ${chalk.blue.bold("[y/n]")}`
+    `You are trying to run ${releaseLog}, are you sure to continue this process? ${chalk.blue.bold(
+      "[y/n]"
+    )}`
   );
   input.prompt();
 
