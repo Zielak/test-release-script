@@ -194,7 +194,7 @@ if (releaseType !== "pre-release" || releaseType !== "release") {
 
   console.log(
     `You are trying to run ${chalk.bgRedBright.white(
-      releaseType
+      " " + releaseType.toUpperCase() + " "
     )}, are you sure to continue this process? ${chalk.blue.bold("[y/n]")}`
   );
   input.prompt();
